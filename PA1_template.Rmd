@@ -1,25 +1,132 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "reproducible research - week 2"
+author: "anaslartiste94"
+date: "07/12/2020"
+output: html_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 ## Loading and preprocessing the data
 
+We read the data and add a new column of the days alone such as the first day is 0.
 
+```{r echo=T}
+data = read.csv("activity.csv", header=T)
+```
+
+Remove NAs:
+
+```{r echo=T}
+data = data[!is.na(data$steps),]
+```
 
 ## What is mean total number of steps taken per day?
 
+We calculate the mean of steps per day and plot the result:
 
+```{r echo=T}
+mean_steps_per_day = tapply(data$steps, data$date, mean)
+plot(mean_steps_per_day, type="l", col="blue", xlab="date")
+```
+
+We calculate the mean of steps per day and plot the result:
+
+``` {r echo=T}
+median_steps_per_day = tapply(data$steps, data$date, median)
+plot(median_steps_per_day,type="l", col="blue", xlab="date")
+```
+
+We calculate the sum of steps per day and plot the histogram:
+
+```{r echo=T}
+steps_per_day = tapply(data$steps, data$date, sum)
+hist(steps_per_day)
+```
 
 ## What is the average daily activity pattern?
 
+We calculate the average steps over all days for each 5 min interval:
 
+```{r echo=T}
+mean_steps_per_interval = tapply(data$steps, data$interval, mean)
+plot(mean_steps_per_interval, type="l", xlab="interval", ylab="steps")
+```
+
+The interval with the maximum steps is *835*
+
+```{r echo=T}
+which.max(mean_steps_per_interval)
+```
 
 ## Imputing missing values
 
+We reload the data and calculate the number of missing values:
 
+```{r echo=T}
+newdata = read.csv("activity.csv", header=T)
+sum(is.na(newdata$steps))
+```
+
+The number of missing values is: 2304.  
+
+We use a silly strategy that consists on replacing NAs with zeros:
+
+```{r echo=T}
+newdata[is.na(newdata$steps),"steps"] = 0
+```
+
+We compare the mean steps curve per day for the data with 0s instead of NAs and the data without NAs:
+
+```{r echo=T}
+
+mean_steps_per_day1 = tapply(data$steps, data$date, mean)
+mean_steps_per_day2 = tapply(newdata$steps, newdata$date, mean)
+
+plot(mean_steps_per_day1, type="l", col="blue", xlab="day")
+lines(mean_steps_per_day2, type="l", col="red", xlab="day")
+
+```
+
+Imputing missing values can give difference results.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+We create a new factor variable in the dataset with two levels, "weekday" and "weekend":
+
+```{r echo=T}
+
+data$date = as.Date(data$date, "%Y-%m-%d")
+
+fct = function(x) {
+  if (weekdays(x) %in% c("Saturday", "Sunday")) {
+    "weekend"
+  } else {
+    "weekday" 
+  }
+}
+
+data$daytype = sapply(data$date, fct)
+```
+
+We plot the average steps per day type:
+
+```{r echo=T}
+data_weekday = data[data$daytype == "weekday",]
+data_weekend = data[data$daytype == "weekend",]
+
+
+mean_steps_per_weekday = tapply(data_weekday$steps, data_weekday$interval, mean)
+mean_steps_per_weekend = tapply(data_weekend$steps, data_weekend$interval, mean)
+
+
+length(mean_steps_per_weekend)
+par(mfrow=c(2,1))
+plot(mean_steps_per_weekday, type="l",xlab="interval", main="weekday")
+plot(mean_steps_per_weekend, type="l", xlab="interval", title="weekend")
+
+```
+
+
